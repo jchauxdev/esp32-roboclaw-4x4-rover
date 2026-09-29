@@ -22,16 +22,17 @@
 2. [Arquitectura](#-arquitectura)
 3. [Materiales](#-materiales)
 4. [Cableado](#-cableado)
-5. [Paso 1 · Instalar PlatformIO en VS Code](#-paso-1--instalar-platformio-en-vs-code)
-6. [Paso 2 · Configurar el proyecto PlatformIO](#-paso-2--configurar-el-proyecto-platformio)
-7. [Paso 3 · Configurar los RoboClaw (Motion Studio)](#-paso-3--configurar-los-roboclaw-motion-studio)
-8. [Paso 4 · Compilar y cargar el firmware](#-paso-4--compilar-y-cargar-el-firmware)
-9. [Paso 5 · Puesta en marcha con la app](#-paso-5--puesta-en-marcha-con-la-app)
-10. [¿Cómo funciona el código?](#-cómo-funciona-el-código)
-11. [Parámetros ajustables](#-parámetros-ajustables)
-12. [Problemas que encontramos y cómo se resolvieron](#-problemas-que-encontramos-y-cómo-se-resolvieron)
-13. [Estructura del repositorio](#-estructura-del-repositorio)
-14. [Próximos pasos](#-próximos-pasos)
+5. [Ensamble y conexiones de potencia](#-ensamble-y-conexiones-de-potencia)
+6. [Paso 1 · Instalar PlatformIO en VS Code](#-paso-1--instalar-platformio-en-vs-code)
+7. [Paso 2 · Configurar el proyecto PlatformIO](#-paso-2--configurar-el-proyecto-platformio)
+8. [Paso 3 · Configurar los RoboClaw (Motion Studio)](#-paso-3--configurar-los-roboclaw-motion-studio)
+9. [Paso 4 · Compilar y cargar el firmware](#-paso-4--compilar-y-cargar-el-firmware)
+10. [Paso 5 · Puesta en marcha con la app](#-paso-5--puesta-en-marcha-con-la-app)
+11. [¿Cómo funciona el código?](#-cómo-funciona-el-código)
+12. [Parámetros ajustables](#-parámetros-ajustables)
+13. [Problemas que encontramos y cómo se resolvieron](#-problemas-que-encontramos-y-cómo-se-resolvieron)
+14. [Estructura del repositorio](#-estructura-del-repositorio)
+15. [Próximos pasos](#-próximos-pasos)
 
 ---
 
@@ -86,8 +87,8 @@ Vista superior del robot:
 
 - 1 × **ESP32** (probado con ESP32-D, placa `esp32dev`) y cable USB de datos
 - 2 × **RoboClaw 2x15A** (firmware 4.2.8)
-- 4 × motores DC
-- 1 × batería (probado con ~11,7 V, LiPo 3S) para la potencia de los RoboClaw
+- 4 × motorreductores DC con encoder
+- 1 × batería LiPo y 1 × **regulador DC-DC ajustable a 12 V** que alimenta la potencia de los RoboClaw
 - Cables dupont y cable USB micro-B para configurar cada RoboClaw
 - PC con **Windows/Mac/Linux**, **VS Code** y un celular Android con **BT Car Controller**
 
@@ -124,6 +125,90 @@ Dónde conectar en la placa (pin de **GND** de la fila superior y pin de señal 
 
 > 💡 La lógica de 3,3 V del ESP32 es compatible con la entrada S1 del RoboClaw.
 > Los cables de **potencia** (batería y motores) van separados de los de **señal**.
+
+---
+
+## 🔩 Ensamble y conexiones de potencia
+
+### El robot terminado
+
+<div align="center">
+<img src="docs/img/ensamble-robot.jpeg" alt="Ensamble del robot" width="75%">
+<br><em>Chasis con 4 motorreductores, 2 RoboClaw (uno por lado), regulador de voltaje y placa central</em>
+</div>
+
+<br>
+
+<div align="center">
+<img src="docs/img/electrica-3-robot-completo.jpeg" alt="Robot completo con batería" width="45%">
+&nbsp;&nbsp;
+<img src="docs/img/electrica-4-vista-frontal.jpeg" alt="Vista frontal de la electrónica" width="45%">
+<br><em>Izquierda: vista completa con la batería LiPo y los conectores de potencia · Derecha: vista frontal de la electrónica</em>
+</div>
+
+### Alimentación: batería ➜ regulador de 12 V ➜ RoboClaw
+
+Un **regulador DC-DC con pantalla** (ajuste de tensión y de corriente) entrega **12,0 V** a los bornes de potencia de los dos RoboClaw. Así los motores reciben una tensión estable aunque la batería se descargue.
+
+<div align="center">
+<img src="docs/img/electrica-2-regulador-12v.jpeg" alt="Regulador de voltaje mostrando 12.0 V" width="70%">
+<br><em>El regulador mostrando 12,0 V de salida (0,05 A con el robot en reposo)</em>
+</div>
+
+<br>
+
+<div align="center">
+<img src="docs/img/electrica-1-vista-superior.jpeg" alt="Vista superior de las conexiones eléctricas" width="80%">
+<br><em>Vista superior: los dos RoboClaw a los lados y el regulador arriba, con los cables de motor y encoder hacia cada lado</em>
+</div>
+
+### Qué es cada conector del RoboClaw
+
+<div align="center">
+<img src="docs/img/diagrama-roboclaw-conectores.png" alt="Conectores del RoboClaw" width="75%">
+</div>
+
+| Conector | Para qué sirve |
+|---|---|
+| **USB** | Configurar con Motion Studio desde el PC |
+| **Bornes M1 / M2** | Los dos motores de ese lado |
+| **Bornes `+` y `−` (centro)** | Entrada de potencia (salida del regulador de 12 V) |
+| **EN1 / EN2** | Encoders de M1 y M2 |
+| **S1 … S5** | Entradas de señal. **S1 es la del Packet Serial** que usa este proyecto |
+
+### Motores: potencia
+
+Cada motor lleva dos cables de potencia (**rojo** y **negro**) a los bornes de su canal:
+
+<div align="center">
+<img src="docs/img/diagrama-potencia-motor.png" alt="Conexión de potencia de los motores" width="75%">
+</div>
+
+| Cable del motor | Borne del RoboClaw |
+|---|---|
+| Rojo / negro del motor de **M1** | `M1A` / `M1B` |
+| Rojo / negro del motor de **M2** | `M2A` / `M2B` |
+
+> Si un motor gira al revés, invierte sus dos cables de potencia, o usa `INVERT_LEFT` / `INVERT_RIGHT` en el código para invertir todo un lado.
+
+### Motores: encoders (opcional, aún no usados en el código)
+
+Los motorreductores traen encoder. Se conectan a **EN1** (motor M1) y **EN2** (motor M2) del RoboClaw, con el mismo esquema para el lado izquierdo:
+
+<div align="center">
+<img src="docs/img/diagrama-encoder-motor.png" alt="Conexión del encoder al RoboClaw" width="75%">
+</div>
+
+| Color | Función |
+|---|---|
+| Rojo | Alimentación del motor (a un borne del motor) |
+| Negro | Alimentación del motor (al otro borne) |
+| Verde | GND del encoder |
+| Azul | Vcc del encoder (3,5 V a 20 V) |
+| Amarillo | Salida A del encoder |
+| Blanco | Salida B del encoder |
+
+> Los encoders **no son necesarios** para el control por Bluetooth actual, pero quedan listos para medir velocidad y distancia (ver [Próximos pasos](#-próximos-pasos)).
 
 ---
 
